@@ -1,0 +1,103 @@
+{
+  "findings": [
+    {
+      "title": "Transfer API lacks ownership check on source account and accepts negative/NaN amounts (BOLA)",
+      "severity": "critical",
+      "description": "The POST /api/transfer endpoint (TransferAPI.trasnfer) parses toAccount, fromAccount and transferAmount straight from the JSON body. It passes them to OperationsUtil.doApiTransfer, which resolves the caller from the Authorization header and calls DBUtil.transferFunds. transferFunds only checks that both accounts exist (Account.getAccount). It never checks that debitAccount belongs to the authenticated user. It also.",
+      "locations": [
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/util/DBUtil.java",
+          "from_line": 308,
+          "to_line": 362
+        },
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/util/OperationsUtil.java",
+          "from_line": 18,
+          "to_line": 24
+        },
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/api/TransferAPI.java",
+          "from_line": 30,
+          "to_line": 33
+        }
+      ],
+      "fix_plan": ""
+    },
+    {
+      "title": "IDOR on account balance and transaction listing endpoints",
+      "severity": "high",
+      "description": "GET /account/{accountNo} and GET /account/{accountNo}/transactions take the account number from the URL path. They pass it straight to Account.getAccount / DBUtil.getAccount / DBUtil.getTransactions. Neither handler calls OperationsUtil.getUser or checks that the account belongs to the caller. The code comment in getAccountBalance says \"not checking the account number, side privilege escalation possible\". No servlet.",
+      "locations": [
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/api/AccountAPI.java",
+          "from_line": 54,
+          "to_line": 104
+        },
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/api/AccountAPI.java",
+          "from_line": 109,
+          "to_line": 139
+        },
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/api/AccountAPI.java",
+          "from_line": 210,
+          "to_line": 235
+        }
+      ],
+      "fix_plan": "Call OperationsUtil.getUser(request) in both handlers and reject the request with 401 if no user is logged in. Use user.lookupAccount(accountNo), or compare the account against user.getAccounts(), and return 403 or 404 if the account is not the caller's. Do."
+    },
+    {
+      "title": "Container runs on EOL Tomcat 7.0.57 as root with no hardening",
+      "severity": "medium",
+      "description": "The runtime stage uses the base image tomcat:7.0.57-jre8. Tomcat 7 is end-of-life and 7.0.57 is a very old release, so it carries many publicly known vulnerabilities. The Dockerfile has no USER directive, so Tomcat and the deployed web app run as root in the container. A compromise of the app or of Tomcat therefore gives root inside the container, which makes escape or tampering easier. Neither base image is pinned.",
+      "locations": [
+        {
+          "file_path": "/Dockerfile.new",
+          "from_line": 8,
+          "to_line": 18
+        },
+        {
+          "file_path": "/Dockerfile.new",
+          "from_line": 2,
+          "to_line": 5
+        }
+      ],
+      "fix_plan": "Use a supported Tomcat base image (9.x or 10.x) pinned by digest. Create a non-root user and add a USER directive. Add a .dockerignore file. Add a HEALTHCHECK. Pin the Gradle image by digest."
+    },
+    {
+      "title": "Plaintext password and username logged on failed login (CWE-532, with log forging)",
+      "severity": "medium",
+      "description": "In LoginServlet.doPost, the request parameters `uid` and `passw` are read, trimmed and lowercased. They are not otherwise sanitized. If DBUtil.isValidUser returns false, both values are written to the application log: \"Login failed >>> User: <uid> >>> Password: <passw>\" (line 83). Anyone who can read the logs can see the plaintext passwords of failed attempts. These are often near-misses or typos of real passwords,.",
+      "locations": [
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/servlet/LoginServlet.java",
+          "from_line": 83,
+          "to_line": 83
+        },
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/servlet/LoginServlet.java",
+          "from_line": 75,
+          "to_line": 80
+        },
+        {
+          "file_path": "src/com/ibm/security/appscan/altoromutual/util/DBUtil.java",
+          "from_line": 217,
+          "to_line": 223
+        }
+      ],
+      "fix_plan": ""
+    },
+    {
+      "title": "Docker registry password passed on command line in CI workflow",
+      "severity": "low",
+      "description": "The workflow runs `docker login -u example-user -p $DOCKER_PASSWORD`. This puts the registry password in the argv of the docker process, which other processes on the runner can read. Docker warns that this is insecure. The safer pattern is `--password-stdin` or `docker/login-action`. The exposure is limited. The secret comes from GitHub Actions secrets, is masked in logs, and the workflow only runs on push to the.",
+      "locations": [
+        {
+          "file_path": "/.github/workflows/docker.yml",
+          "from_line": 15
+        }
+      ],
+      "fix_plan": "Use `echo \"$DOCKER_PASSWORD\" | docker login -u <user> --password-stdin`, or use the docker/login-action action with secrets. Also consider adding a minimal `permissions:` block."
+    }
+  ]
+}

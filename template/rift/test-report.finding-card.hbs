@@ -1,0 +1,33 @@
+<div class="card card--vuln card--finding severity--{{severity}}" data-snyk-test="{{severity}}"
+  data-severity="{{severity}}" data-search="{{searchText}}">
+  <div class="label label--{{severity}}">
+    <span class="label__text">{{severity}} severity</span>
+  </div>
+
+  <h2 class="card__title"><span class="card__num">{{num}}</span>{{title}}</h2>
+
+  <div class="card__section">
+    {{#if locations}}
+      <ul class="locations">
+        {{#each locations}}
+          <li class="locations__item">
+            <code>{{filePath}}</code>
+            {{#if lineRange}}<span class="locations__lines">{{lineRange}}</span>{{/if}}
+          </li>
+        {{/each}}
+      </ul>
+    {{/if}}
+
+    <hr/>
+
+    <h2>Description</h2>
+    <p>{{description}}</p>
+
+    <h2>Fix plan</h2>
+    {{#if hasFixPlan}}
+      <p>{{fixPlan}}</p>
+    {{else}}
+      <p class="no-fix-plan">Rift returned no fix plan for this finding.</p>
+    {{/if}}
+  </div><!-- .card__section -->
+</div><!-- .card -->

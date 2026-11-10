@@ -21,6 +21,7 @@ import {
   processSourceCode,
   processSuppression,
 } from './codeutil';
+import { isRiftData, processRiftFindings } from './riftutil';
 import { formatDateTime } from './dateutil';
 import { registerHandlebarsHelpers } from './handlebarsutil';
 
@@ -112,6 +113,13 @@ class SnykToHtml {
           ? path.join(__dirname, '../../template/iac/test-report.hbs')
           : template;
         return processIacData(data, template, summary);
+      } else if (isRiftData(data)) {
+        // `snyk rift test --experimental --json` emits a flat findings array
+        // with no project metadata, so it gets its own template.
+        template = isDefaultTemplate(template)
+          ? path.join(__dirname, '../../template/rift/test-report.hbs')
+          : template;
+        return processRiftData(data, template, summary);
       } else if (data?.runs && data?.runs[0].tool.driver.name === 'SnykCode') {
         template = isDefaultTemplate(template)
           ? path.join(__dirname, '../../template/code/test-report.hbs')
@@ -477,6 +485,37 @@ async function processCodeData(
     ),
   };
   return generateCodeTemplate(processedData, template);
+}
+
+async function generateRiftTemplate(
+  data: any,
+  template: string,
+): Promise<string> {
+  await registerPeerPartial(template, 'inline-css');
+  await registerPeerPartial(template, 'header');
+  await registerPeerPartial(template, 'inline-js');
+  await registerPeerPartial(template, 'finding-card');
+
+  const htmlTemplate = await compileTemplate(template);
+
+  return htmlTemplate(data);
+}
+
+async function processRiftData(
+  data: any,
+  template: string,
+  summary: boolean,
+): Promise<string> {
+  if (data.error) {
+    return generateRiftTemplate(data, template);
+  }
+
+  const processedData = {
+    ...processRiftFindings(data),
+    showSummaryOnly: summary,
+  };
+
+  return generateRiftTemplate(processedData, template);
 }
 
 async function processContainerData(

@@ -1,0 +1,48 @@
+<script>
+  (function () {
+    var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.card--finding'));
+    var search = document.getElementById('rift-filter');
+    var noMatch = document.getElementById('rift-no-match');
+    var severity = 'all';
+
+    if (!chips.length || !cards.length) {
+      return;
+    }
+
+    function apply() {
+      var term = ((search && search.value) || '').trim().toLowerCase();
+      var shown = 0;
+
+      cards.forEach(function (card) {
+        var matchesSeverity = severity === 'all' || card.getAttribute('data-severity') === severity;
+        var haystack = card.getAttribute('data-search') || '';
+        var matchesTerm = !term || haystack.indexOf(term) !== -1;
+        var show = matchesSeverity && matchesTerm;
+
+        card.style.display = show ? '' : 'none';
+        if (show) {
+          shown++;
+        }
+      });
+
+      if (noMatch) {
+        noMatch.style.display = shown ? 'none' : 'block';
+      }
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        severity = chip.getAttribute('data-filter');
+        chips.forEach(function (other) {
+          other.setAttribute('aria-pressed', String(other === chip));
+        });
+        apply();
+      });
+    });
+
+    if (search) {
+      search.addEventListener('input', apply);
+    }
+  })();
+</script>

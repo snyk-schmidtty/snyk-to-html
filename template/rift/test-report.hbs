@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Language" content="en-us">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Snyk Rift test report</title>
+  <meta name="description" content="{{totalIssues}} findings reported by snyk rift test.">
+  <base target="_blank">
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/snyk/image/upload/v1468845142/favicon/favicon.png"
+    sizes="194x194">
+  <link rel="shortcut icon" href="https://res.cloudinary.com/snyk/image/upload/v1468845142/favicon/favicon.ico">
+  {{> inline-css }}
+</head>
+
+<body class="section-projects">
+  <main class="layout-stacked">
+    {{> header }}
+
+    {{#if error}}
+      <div class="layout-container" style="padding-top: 35px;">
+        {{error}}
+      </div>
+    {{else}}
+      {{#if hasFindings}}
+        <section class="layout-container" style="padding-top: 20px; padding-bottom: 0;">
+          <div class="tiles">
+            {{#each severityCounts}}
+              <div class="tile tile--{{severity}}">
+                <span class="tile__count">{{findingCount}}</span>
+                <span class="tile__label">{{severity}}</span>
+              </div>
+            {{/each}}
+          </div>
+        </section>
+
+        {{#unless showSummaryOnly}}
+          <section class="layout-container" style="padding-top: 0; padding-bottom: 0;">
+            <div class="controls">
+              <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+              {{#each severityCounts}}
+                <button type="button" class="chip" data-filter="{{severity}}" aria-pressed="false">{{severity}}</button>
+              {{/each}}
+              <input type="search" id="rift-filter" placeholder="Filter by file, title or wording"
+                aria-label="Filter findings">
+            </div>
+          </section>
+
+          <div class="layout-container" style="padding-top: 1em;">
+            <div class="cards--vuln" id="rift-findings">
+              {{#each findings}}
+                {{> finding-card }}
+              {{/each}}
+            </div>
+            <p class="no-match" id="rift-no-match">No finding matches that filter.</p>
+          </div>
+
+          {{#if attackSurface}}
+            <section class="layout-container" style="padding-top: 0;">
+              <h2 class="section-title">Attack surface <span class="section-title__note">files by finding count</span></h2>
+              <div class="surface-scroller">
+                <table class="surface">
+                  <tbody>
+                    {{#each attackSurface}}
+                      <tr>
+                        <td><code>{{filePath}}</code></td>
+                        <td class="surface__count">{{findingCount}}</td>
+                        <td class="surface__bar"><span style="width: {{barWidth}}%"></span></td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          {{/if}}
+
+          <section class="layout-container" style="padding-top: 0;">
+            <h2 class="section-title">Reading this report</h2>
+            <div class="card caveats">
+              <ul>
+                <li><strong>Rift findings carry no stable identifiers.</strong> The output has no issue ID or
+                  fingerprint, so findings cannot be deduped against an issue history or compared run to run. An
+                  accepted risk reappears as new on the next scan.</li>
+                <li><strong>Severity is relative to the run, not absolute.</strong> Do not compare severity counts
+                  across two Rift runs or against <code>snyk test</code> and <code>snyk code test</code> severities.</li>
+                <li><strong>The scan reflects the working tree, not a commit.</strong> Uncommitted changes are
+                  included, so re-running against a clean checkout can give a different set of findings.</li>
+                {{#if findingsWithoutFixPlanCount}}
+                  <li><strong>{{findingsWithoutFixPlanCount}} of {{totalIssues}} findings carry no fix plan</strong>
+                    ({{findingsWithoutFixPlan}}). The remaining plans are reproduced verbatim as Rift wrote them.</li>
+                {{/if}}
+                <li><strong><code>snyk rift test</code> is an early-access command.</strong> It requires
+                  <code>--experimental</code> and its output format may change before general availability.</li>
+              </ul>
+            </div>
+          </section>
+        {{/unless}}
+      {{else}}
+        <div class="layout-container" style="padding-top: 35px;">
+          No findings reported by Rift.
+        </div>
+      {{/if}}
+    {{/if}}
+  </main><!-- .layout-stacked__content -->
+  {{> inline-js }}
+</body>
+
+</html>
