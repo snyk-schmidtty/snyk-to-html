@@ -82,6 +82,14 @@ Snyk JSON to HTML Mapper mapper works with the different Snyk Products.  Change 
 
       `snyk container test [image] --json | snyk-to-html -o results-container.html`
 
+   **For Snyk Rift (early access)**
+
+      Run the following line to create a file called `results-rift.html`:
+
+      `snyk rift test --experimental --json | snyk-to-html -o results-rift.html`
+
+      See [Snyk Rift reports](#snyk-rift-reports) for what the report shows and how it differs from the other products.
+
       The following methods/examples will utilize snyk test, however they will also work with the other product commands , as above.
 
 2. Using a temporary file:
@@ -119,6 +127,28 @@ Snyk JSON to HTML Mapper mapper works with the different Snyk Products.  Change 
    * gradle
    * sbt
    * pip
+
+### Snyk Rift reports
+
+`snyk rift test --experimental --json` emits a flat `findings` array rather than the
+per-project results the other products return, so `snyk-to-html` detects it and renders a
+dedicated report (`template/rift/test-report.hbs`). The report shows a severity tally,
+client-side severity and text filters, each finding's locations and line ranges, Rift's own
+fix plan where it supplied one, and a per-file attack-surface table.
+
+Three things about Rift output are worth knowing before you act on a report:
+
+* **Findings carry no stable identifiers.** Rift emits no issue ID or fingerprint, so
+  findings cannot be deduped against an issue history or diffed run to run. An accepted
+  risk reappears as new on the next scan.
+* **Severity is relative to the run.** Do not compare severity counts across two Rift runs,
+  or against `snyk test` and `snyk code test` severities.
+* **The scan reflects the working tree, not a commit.** Uncommitted changes are included.
+
+The report repeats these caveats, along with which findings came back without a fix plan.
+
+`snyk rift test` is early access and requires `--experimental`; its output format may change
+before general availability.
 
 ## View the HTML report
 
